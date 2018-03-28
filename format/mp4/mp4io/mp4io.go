@@ -2,7 +2,7 @@
 package mp4io
 
 import (
-	"github.com/nareix/joy4/utils/bits/pio"
+	"github.com/gnolizuh/joy4/utils/bits/pio"
 	"os"
 	"io"
 	"fmt"

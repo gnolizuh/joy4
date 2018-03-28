@@ -1,8 +1,8 @@
 package aacparser
 
 import (
-	"github.com/nareix/joy4/utils/bits"
-	"github.com/nareix/joy4/av"
+	"github.com/gnolizuh/joy4/utils/bits"
+	"github.com/gnolizuh/joy4/av"
 	"time"
 	"fmt"
 	"bytes"

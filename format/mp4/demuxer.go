@@ -3,10 +3,10 @@ package mp4
 import (
 	"time"
 	"fmt"
-	"github.com/nareix/joy4/av"
-	"github.com/nareix/joy4/codec/aacparser"
-	"github.com/nareix/joy4/codec/h264parser"
-	"github.com/nareix/joy4/format/mp4/mp4io"
+	"github.com/gnolizuh/joy4/av"
+	"github.com/gnolizuh/joy4/codec/aacparser"
+	"github.com/gnolizuh/joy4/codec/h264parser"
+	"github.com/gnolizuh/joy4/format/mp4/mp4io"
 	"io"
 )
 
