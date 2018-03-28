@@ -18,16 +18,71 @@ import (
 	"net/url"
 	"strings"
 	"time"
+	"errors"
+	"crypto/tls"
+	"github.com/marten-seemann/quic-conn"
+	"crypto/rsa"
+	"crypto/x509"
+	"math/big"
+	"encoding/pem"
 )
 
 var Debug bool
+
+const (
+	QUIC_SCHEME = "quic"
+	RTMP_SCHEME = "rtmp"
+)
+
+func TLSConfig() (*tls.Config) {
+	key, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(time.Hour),
+		KeyUsage:     x509.KeyUsageCertSign | x509.KeyUsageDigitalSignature,
+	}
+
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	keyPEM := pem.EncodeToMemory(&pem.Block{
+		Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key),
+	})
+
+	b := pem.Block{Type: "CERTIFICATE", Bytes: certDER}
+	certPEM := pem.EncodeToMemory(&b)
+
+	tlsCert, err := tls.X509KeyPair(certPEM, keyPEM)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+
+	return &tls.Config{ Certificates: []tls.Certificate{tlsCert} }
+}
 
 func ParseURL(uri string) (u *url.URL, err error) {
 	if u, err = url.Parse(uri); err != nil {
 		return
 	}
 	if _, _, serr := net.SplitHostPort(u.Host); serr != nil {
-		u.Host += ":1935"
+		switch u.Scheme {
+		case QUIC_SCHEME:
+			u.Host += ":6935"
+		case RTMP_SCHEME:
+			u.Host += ":1935"
+		default:
+			err = errors.New(fmt.Sprintf("Unsupport protocol %s", u.Scheme))
+		}
 	}
 	return
 }
@@ -42,13 +97,17 @@ func DialTimeout(uri string, timeout time.Duration) (conn *Conn, err error) {
 		return
 	}
 
-	dailer := net.Dialer{Timeout: timeout}
-	var netconn net.Conn
-	if netconn, err = dailer.Dial("tcp", u.Host); err != nil {
+	var c net.Conn
+	switch u.Scheme {
+	case QUIC_SCHEME:
+		c, err = quicconn.Dial(u.Host, TLSConfig())
+	case RTMP_SCHEME:
+		c, err = net.DialTimeout("tcp", u.Host, timeout)
+	default:
 		return
 	}
 
-	conn = NewConn(netconn)
+	conn = NewConn(c)
 	conn.URL = u
 	return
 }
