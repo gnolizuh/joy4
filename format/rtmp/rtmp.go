@@ -107,6 +107,10 @@ func DialTimeout(uri string, timeout time.Duration) (conn *Conn, err error) {
 		return
 	}
 
+	if err != nil {
+		return
+	}
+
 	conn = NewConn(c)
 	conn.URL = u
 	return
